@@ -17,6 +17,7 @@ const SNAP_THRESHOLD = 50
 const WIDTH = 260
 const HEIGHT = 200
 const MARGIN = 50
+const NAV_BAR_HEIGHT = 80 // ✅ 顶部导航栏高度限制
 
 let x = 0
 let y = 0
@@ -36,10 +37,10 @@ onMounted(() => {
     el.style.top = '0'
     el.style.zIndex = '10000'
 
-    // 配置拖拽，只允许从 header 拖动
+    // 配置拖拽
     interaction = interact(el).draggable({
         inertia: false, // 禁止惯性
-        allowFrom: '.assistant-header', // ✅ 只允许从头部拖动
+        allowFrom: '.assistant-header', // ✅ 只允许头部拖动
         listeners: {
             start() {
                 el!.style.transition = ''
@@ -48,11 +49,13 @@ onMounted(() => {
                 x += event.dx
                 y += event.dy
 
-                // 边界限制
+                // 限制边界
                 const maxX = window.innerWidth - el!.offsetWidth
                 const maxY = window.innerHeight - el!.offsetHeight
+                const minY = NAV_BAR_HEIGHT // ✅ 顶部限制位置
+
                 x = Math.max(0, Math.min(x, maxX))
-                y = Math.max(0, Math.min(y, maxY))
+                y = Math.max(minY, Math.min(y, maxY))
 
                 el!.style.transform = `translate(${x}px, ${y}px)`
             },
@@ -64,7 +67,7 @@ onMounted(() => {
 
                 const leftDist = x
                 const rightDist = screenW - (x + elW)
-                const topDist = y
+                const topDist = y - NAV_BAR_HEIGHT // ✅ 吸附时考虑顶部限制
                 const bottomDist = screenH - (y + elH)
                 const minDist = Math.min(leftDist, rightDist, topDist, bottomDist)
 
@@ -75,7 +78,7 @@ onMounted(() => {
                 if (minDist <= SNAP_THRESHOLD) {
                     if (minDist === leftDist) targetX = padding
                     else if (minDist === rightDist) targetX = screenW - elW - padding
-                    else if (minDist === topDist) targetY = padding
+                    else if (minDist === topDist) targetY = NAV_BAR_HEIGHT + padding
                     else if (minDist === bottomDist) targetY = screenH - elH - padding
                 }
 
@@ -94,8 +97,9 @@ onMounted(() => {
     const handleResize = () => {
         const maxX = window.innerWidth - el!.offsetWidth
         const maxY = window.innerHeight - el!.offsetHeight
+        const minY = NAV_BAR_HEIGHT
         x = Math.min(x, maxX)
-        y = Math.min(y, maxY)
+        y = Math.max(minY, Math.min(y, maxY))
         el!.style.transform = `translate(${x}px, ${y}px)`
     }
 
@@ -121,7 +125,7 @@ onMounted(() => {
     user-select: none;
 }
 
-/* 头部区域：可拖动 */
+/* 头部：可拖动 */
 .assistant-header {
     height: 40px;
     background: linear-gradient(135deg, #007bff, #00bcd4);
@@ -137,7 +141,7 @@ onMounted(() => {
     cursor: grabbing;
 }
 
-/* 内容区域：不可拖动 */
+/* 内容区域 */
 .assistant-body {
     flex: 1;
     padding: 12px;
