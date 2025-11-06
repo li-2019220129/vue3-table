@@ -1,0 +1,11 @@
+import { createApp } from 'vue'
+import ElementPlus from 'element-plus'
+import 'element-plus/dist/index.css'
+import App from './App.vue'
+import App3 from './App3.vue'
+import App2 from './App2.vue'
+import App4 from './App4.vue'
+import './styles/index.less'
+import 'normalize.css'
+import InitIcon from './icon'
+createApp(App4).use(ElementPlus).use(InitIcon).mount('#app')
