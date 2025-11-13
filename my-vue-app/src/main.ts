@@ -7,7 +7,8 @@ import App2 from './App2.vue'
 import App4 from './App4.vue'
 import App5 from './App5.vue'
 import App6 from './App6.vue'
+import App7 from './App7.vue'
 import './styles/index.less'
 import 'normalize.css'
 import InitIcon from './icon'
-createApp(App6).use(ElementPlus).use(InitIcon).mount('#app')
+createApp(App7).use(ElementPlus).use(InitIcon).mount('#app')
