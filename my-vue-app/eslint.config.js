@@ -3,7 +3,7 @@ import globals from 'globals'
 import tseslint from 'typescript-eslint'
 import pluginVue from 'eslint-plugin-vue'
 import { defineConfig } from 'eslint/config'
-import prettierRecommended from 'eslint-plugin-prettier/recommended'
+// import prettierRecommended from 'eslint-plugin-prettier/recommended'
 
 export default defineConfig([
   {
@@ -26,6 +26,6 @@ export default defineConfig([
       'no-console': 'warn',
       semi: ['off']
     }
-  },
-  prettierRecommended
+  }
+  // prettierRecommended
 ])

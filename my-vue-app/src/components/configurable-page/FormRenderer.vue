@@ -1,12 +1,11 @@
 <template>
     <div class="form-renderer">
         <template v-for="(field, index) in schema" :key="index">
-
             <!-- 折叠组 -->
             <el-collapse v-if="field.type === 'group'" v-model="collapseMap[field.label]">
                 <el-collapse-item :title="field.label">
                     <FormRenderer :model="model[field.prop]" :schema="field.children || []"
-                        :basePath="fullPath(field.prop)" @update:model="val => model[field.prop] = val" />
+                        :basePath="fullPath(field.prop)" @update:model="(val) => (model[field.prop] = val)" />
                 </el-collapse-item>
             </el-collapse>
 
@@ -14,7 +13,7 @@
             <div v-else-if="field.type === 'object'" class="form-object">
                 <h4>{{ field.label }}</h4>
                 <FormRenderer :model="model[field.prop]" :schema="field.children || []" :basePath="fullPath(field.prop)"
-                    @update:model="val => model[field.prop] = val" />
+                    @update:model="(val) => (model[field.prop] = val)" />
             </div>
 
             <!-- 数组 -->
@@ -25,7 +24,8 @@
                 </div>
                 <div v-for="(item, i) in model[field.prop]" :key="i" class="array-item">
                     <FormRenderer :model="model[field.prop][i]" :schema="field.itemSchema || []"
-                        :basePath="fullPath(`${field.prop}.${i}`)" @update:model="val => model[field.prop][i] = val" />
+                        :basePath="fullPath(`${field.prop}.${i}`)"
+                        @update:model="(val) => (model[field.prop][i] = val)" />
                     <el-button type="danger" size="small" @click="removeArrayItem(field, i)">删除</el-button>
                 </div>
             </div>
@@ -35,7 +35,6 @@
                 <component v-if="model" :is="getComponentType(field)" v-model="model[field.prop]" v-bind="field.attrs"
                     clearable />
             </el-form-item>
-
         </template>
     </div>
 </template>
@@ -61,13 +60,14 @@ function fullPath(prop?: string) {
 // 递归初始化 model，确保所有嵌套字段都有值
 function initModel(schema: any[], model: any) {
     if (!model) return
-    schema.forEach(field => {
+    schema.forEach((field) => {
         if (!field.prop) return
 
         // 初始化字段
         if (!(field.prop in model) || model[field.prop] === undefined) {
             if (field.type === 'array') model[field.prop] = []
-            else if (field.type === 'group' || field.type === 'object') model[field.prop] = {}
+            else if (field.type === 'group' || field.type === 'object')
+                model[field.prop] = {}
             else model[field.prop] = field.default ?? ''
         }
 
@@ -112,11 +112,16 @@ function removeArrayItem(field: any, index: number) {
 // 根据 type 返回组件
 function getComponentType(field: any) {
     switch (field.type) {
-        case 'input': return 'el-input'
-        case 'textarea': return 'el-input'
-        case 'number': return 'el-input-number'
-        case 'switch': return 'el-switch'
-        default: return 'el-input'
+        case 'input':
+            return 'el-input'
+        case 'textarea':
+            return 'el-input'
+        case 'number':
+            return 'el-input-number'
+        case 'switch':
+            return 'el-switch'
+        default:
+            return 'el-input'
     }
 }
 </script>
