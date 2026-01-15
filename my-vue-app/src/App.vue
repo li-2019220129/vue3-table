@@ -1,38 +1,9 @@
 <template>
-  <!-- <TableComponent
-    :tableData="tableData"
-    :height="height"
-    :col="colData"
-    @selection-change="handleSelectionChange"
-  ></TableComponent>
-  <div style="width: 800px; padding: 20px; margin: 0 auto">
-    <lzy-tabs v-model="editableTabsValue" :data="tabsData"> </lzy-tabs>
-  </div> -->
-  <!-- <div style="
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      width: 60%;
-      height: 400px;
-      margin: 50px auto;
-      overflow: hidden;
-    ">
-    <MonacoEditor v-model="code" :completions="customCompletions" :customLanguage="customLanguage" language="mylang" />
-    <MonacoEditor v-model="code" language="json" />
-  </div> -->
-  <tree-select @node-click="handleNodeClick" v-model="treeData" :showCheckbox="true" check-strictly placeholder="请选择"
-    :data="data" style="width: 240px;margin: 50px auto;"></tree-select>
-
-  <!-- <el-tree-select v-model="value" @node-click="handleNodeClick" :data="data" style="width: 240px;margin-left: 100px;"
-    :render-after-expand="false" /> -->
+  <deep-table></deep-table>
 </template>
 <script setup lang="tsx">
 import { ref } from 'vue'
-import TreeSelect from './components/tree-select.vue'
-import type { TreeNode } from 'element-plus'
-// import TableComponent from './components/table-com.tsx'
-// import LzyTabs from './components/tabs-com.vue'
-// import MonacoEditor from './components/code-editor.vue'
-// import type { TabsType } from './components/index'
+import DeepTable from './deepTable.vue'
 
 //code editor
 // const code = ref(``)

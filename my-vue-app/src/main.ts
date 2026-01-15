@@ -8,7 +8,8 @@ import App4 from './App4.vue'
 import App5 from './App5.vue'
 import App6 from './App6.vue'
 import App7 from './app-config.vue'
+import deepTable from './deepTable.vue'
 import './styles/index.less'
 import 'normalize.css'
 import InitIcon from './icon'
-createApp(App7).use(ElementPlus).use(InitIcon).mount('#app')
+createApp(deepTable).use(ElementPlus).use(InitIcon).mount('#app')

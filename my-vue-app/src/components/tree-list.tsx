@@ -36,7 +36,7 @@ const TreeList = defineComponent({
         const treeData = ref<TreeNodeData[]>([])
 
         const setData = (node: TreeNodeData[], level = 0) => {
-            for (let data of node) {
+            for (const data of node) {
                 data.level = level + 1
                 data.expand = data.expand ?? false
                 data.rawData = props.nodeData
@@ -51,7 +51,7 @@ const TreeList = defineComponent({
         }
         const setCheckData = (data: TreeNodeData[] | undefined, checked: boolean) => {
             if (!data) return
-            for (let item of data) {
+            for (const item of data) {
                 const keys = Reflect.ownKeys(item)
                 if (keys.includes('check')) {
                     item['check'] = checked
