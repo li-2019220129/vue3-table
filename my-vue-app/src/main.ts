@@ -12,4 +12,4 @@ import deepTable from './deepTable.vue'
 import './styles/index.less'
 import 'normalize.css'
 import InitIcon from './icon'
-createApp(deepTable).use(ElementPlus).use(InitIcon).mount('#app')
+createApp(App4).use(ElementPlus).use(InitIcon).mount('#app')

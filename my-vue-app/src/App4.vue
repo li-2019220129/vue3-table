@@ -1,151 +1,274 @@
 <template>
-    <div ref="assistantRef" class="assistant">
-        <div class="assistant-header">🤖 智能助手</div>
-        <div class="assistant-body">
-            <p>这里是内容区域，不可拖动。</p>
+    <div ref="assistantRef" class="assistant-container" :class="{
+        'is-floating': isFloating && !isFullscreen,
+        'is-fullscreen': isFullscreen
+    }" :style="containerStyle">
+        <div class="assistant-header">
+            <div class="drag-handle">
+                <span class="icon">🤖</span>
+                <span class="title">智能助手</span>
+            </div>
+
+            <div class="header-controls">
+                <button @click="toggleFloating" class="ctrl-btn" :title="isFloating ? '固定到右侧' : '自由悬浮'">
+                    {{ isFloating ? '📌 固定' : '☁️ 悬浮' }}
+                </button>
+
+                <button @click="toggleFullscreen" class="ctrl-btn primary">
+                    <span v-if="isFullscreen">收起 ➔</span>
+                    <span v-else>⛶ 全屏</span>
+                </button>
+            </div>
         </div>
+
+        <div class="assistant-body">
+            <div class="info-card">
+                <p>当前模式：
+                    <strong v-if="isFullscreen">全屏模式</strong>
+                    <strong v-else-if="isFloating">悬浮模式</strong>
+                    <strong v-else>右侧固定模式</strong>
+                </p>
+            </div>
+            <div class="content">
+                <p>内容区域...</p>
+            </div>
+        </div>
+
+        <template v-if="!isFullscreen">
+            <div class="resize-bar left"></div>
+            <div class="resize-bar right"></div>
+        </template>
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import interact from 'interactjs'
 
-const assistantRef = ref<HTMLElement | null>(null)
-
+// --- 配置常量 ---
+const MIN_WIDTH = 480
+const NAV_BAR_HEIGHT = 80
 const SNAP_THRESHOLD = 50
-const WIDTH = 260
-const HEIGHT = 200
-const MARGIN = 50
-const NAV_BAR_HEIGHT = 80 // ✅ 顶部导航栏高度限制
+const AUTO_FULLSCREEN_RATIO = 0.85 // 超过 85% 宽度自动全屏
 
-let x = 0
-let y = 0
-let el: HTMLElement | null = null
-let interaction: any = null
+const assistantRef = ref<HTMLElement | null>(null)
+const isFloating = ref(false)
+const isFullscreen = ref(false)
+
+const pos = ref({
+    x: 0,
+    y: NAV_BAR_HEIGHT,
+    w: MIN_WIDTH,
+})
+
+// 计算样式
+const containerStyle = computed(() => {
+    if (isFullscreen.value) {
+        return {
+            width: '100vw',
+            height: `calc(100vh - ${NAV_BAR_HEIGHT}px)`,
+            transform: `translate(0px, ${NAV_BAR_HEIGHT}px)`,
+            zIndex: 10000,
+            transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
+        }
+    }
+    return {
+        width: `${pos.value.w}px`,
+        height: `calc(100vh - ${NAV_BAR_HEIGHT}px)`,
+        transform: `translate(${pos.value.x}px, ${pos.value.y}px)`,
+        zIndex: 9999,
+        // 只有在非全屏状态下，手动拖拽时不应用 transition
+        transition: 'none'
+    }
+})
+
+// ✅ 核心逻辑：切换全屏/内缩
+const toggleFullscreen = () => {
+    if (isFullscreen.value) {
+        // 退出全屏（内缩）
+        isFullscreen.value = false
+        isFloating.value = false // 强制关闭悬浮态
+        pos.value.x = window.innerWidth - pos.value.w // 回到最右侧
+    } else {
+        // 进入全屏
+        isFullscreen.value = true
+    }
+}
+
+// 切换悬浮
+const toggleFloating = () => {
+    debugger
+    if (isFullscreen.value) isFullscreen.value = false
+    isFloating.value = !isFloating.value
+    if (!isFloating.value) {
+        pos.value.x = window.innerWidth - pos.value.w
+    }
+}
 
 onMounted(() => {
-    el = assistantRef.value
+    const el = assistantRef.value
     if (!el) return
 
-    // 初始位置右下角
-    x = window.innerWidth - WIDTH - MARGIN
-    y = window.innerHeight - HEIGHT - MARGIN
-    el.style.transform = `translate(${x}px, ${y}px)`
-    el.style.position = 'fixed'
-    el.style.left = '0'
-    el.style.top = '0'
-    el.style.zIndex = '10000'
+    // 初始化靠右
+    pos.value.x = window.innerWidth - pos.value.w
+    const instance = interact(el)
 
-    // 配置拖拽
-    interaction = interact(el).draggable({
-        inertia: false, // 禁止惯性
-        allowFrom: '.assistant-header', // ✅ 只允许头部拖动
+    // 1. 拖拽
+    instance.draggable({
+        allowFrom: '.assistant-header',
         listeners: {
             start() {
-                el!.style.transition = ''
+                if (isFullscreen.value) return
+                isFloating.value = true
+                el.style.transition = 'none'
             },
             move(event) {
-                x += event.dx
-                y += event.dy
-
-                // 限制边界
-                const maxX = window.innerWidth - el!.offsetWidth
-                const maxY = window.innerHeight - el!.offsetHeight
-                const minY = NAV_BAR_HEIGHT // ✅ 顶部限制位置
-
-                x = Math.max(0, Math.min(x, maxX))
-                y = Math.max(minY, Math.min(y, maxY))
-
-                el!.style.transform = `translate(${x}px, ${y}px)`
+                if (isFullscreen.value) return
+                pos.value.x += event.dx
+                const maxX = window.innerWidth - pos.value.w
+                pos.value.x = Math.max(0, Math.min(pos.value.x, maxX))
             },
             end() {
-                const screenW = window.innerWidth
-                const screenH = window.innerHeight
-                const elW = el!.offsetWidth
-                const elH = el!.offsetHeight
-
-                const leftDist = x
-                const rightDist = screenW - (x + elW)
-                const topDist = y - NAV_BAR_HEIGHT // ✅ 吸附时考虑顶部限制
-                const bottomDist = screenH - (y + elH)
-                const minDist = Math.min(leftDist, rightDist, topDist, bottomDist)
-
-                let targetX = x
-                let targetY = y
-                const padding = 10
-
-                if (minDist <= SNAP_THRESHOLD) {
-                    if (minDist === leftDist) targetX = padding
-                    else if (minDist === rightDist) targetX = screenW - elW - padding
-                    else if (minDist === topDist) targetY = NAV_BAR_HEIGHT + padding
-                    else if (minDist === bottomDist) targetY = screenH - elH - padding
+                if (isFullscreen.value) return
+                // 自动吸附回归固定模式
+                const distToRight = window.innerWidth - (pos.value.x + pos.value.w)
+                if (distToRight <= SNAP_THRESHOLD) {
+                    isFloating.value = false
+                    pos.value.x = window.innerWidth - pos.value.w
+                    el.style.transition = 'transform 0.4s ease'
                 }
-
-                el!.style.transition = 'transform 0.3s cubic-bezier(0.22, 1, 0.36, 1)'
-                el!.style.transform = `translate(${targetX}px, ${targetY}px)`
-                x = targetX
-                y = targetY
-                setTimeout(() => {
-                    el!.style.transition = ''
-                }, 300)
             }
         }
     })
 
-    // 监听 resize，防止出界
-    const handleResize = () => {
-        const maxX = window.innerWidth - el!.offsetWidth
-        const maxY = window.innerHeight - el!.offsetHeight
-        const minY = NAV_BAR_HEIGHT
-        x = Math.min(x, maxX)
-        y = Math.max(minY, Math.min(y, maxY))
-        el!.style.transform = `translate(${x}px, ${y}px)`
-    }
+    // 2. 缩放
+    instance.resizable({
+        edges: { left: true, right: true },
+        listeners: {
+            move(event) {
+                if (isFullscreen.value) return
+                let { x, w } = pos.value
+                const originalRight = x + w
 
-    window.addEventListener('resize', handleResize)
-    onBeforeUnmount(() => {
-        window.removeEventListener('resize', handleResize)
-        interaction?.unset()
+                w = event.rect.width
+                w = Math.max(MIN_WIDTH, Math.min(w, window.innerWidth))
+
+                // ✅ 自动变全屏逻辑
+                if (w > window.innerWidth * AUTO_FULLSCREEN_RATIO) {
+                    isFullscreen.value = true
+                    return
+                }
+
+                if (event.edges.left) {
+                    x = originalRight - w
+                    if (x < 0) { x = 0; w = originalRight }
+                } else if (event.edges.right) {
+                    if (x + w > window.innerWidth) w = window.innerWidth - x
+                }
+
+                pos.value.w = w
+                pos.value.x = x
+            }
+        }
     })
+
+    window.addEventListener('resize', () => {
+        if (!isFloating.value && !isFullscreen.value) {
+            pos.value.x = window.innerWidth - pos.value.w
+        }
+    })
+})
+
+onBeforeUnmount(() => {
+    if (assistantRef.value) interact(assistantRef.value).unset()
 })
 </script>
 
 <style scoped>
-.assistant {
-    width: 260px;
-    height: 200px;
-    border-radius: 12px;
+.assistant-container {
+    position: fixed;
+    top: 0;
+    left: 0;
     background: #fff;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
     display: flex;
     flex-direction: column;
-    overflow: hidden;
-    cursor: default;
-    user-select: none;
+    box-sizing: border-box;
+    touch-action: none;
+    /* 固定态：只有左侧边框 */
+    border-left: 1px solid #e5e7eb;
 }
 
-/* 头部：可拖动 */
+.is-floating {
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.is-fullscreen {
+    border: none !important;
+    box-shadow: none !important;
+}
+
 .assistant-header {
-    height: 40px;
-    background: linear-gradient(135deg, #007bff, #00bcd4);
-    color: white;
+    height: 52px;
+    padding: 0 16px;
+    background: #fff;
+    border-bottom: 1px solid #f3f4f6;
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    justify-content: center;
-    font-weight: 600;
     cursor: grab;
 }
 
-.assistant-header:active {
-    cursor: grabbing;
+.header-controls {
+    display: flex;
+    gap: 8px;
 }
 
-/* 内容区域 */
+.ctrl-btn {
+    padding: 4px 10px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    color: #4b5563;
+}
+
+.ctrl-btn.primary {
+    background: #2563eb;
+    color: #fff;
+    border-color: #2563eb;
+}
+
 .assistant-body {
     flex: 1;
-    padding: 12px;
-    font-size: 14px;
-    color: #333;
+    padding: 16px;
+    background: #fafafa;
+}
+
+.info-card {
+    padding: 10px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+}
+
+.resize-bar {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 10px;
+    z-index: 20;
+}
+
+.resize-bar.left {
+    left: -5px;
+    cursor: ew-resize;
+}
+
+.resize-bar.right {
+    right: -5px;
+    cursor: ew-resize;
 }
 </style>
