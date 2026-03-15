@@ -6,7 +6,7 @@
 
         <div class="carousel-viewport">
             <div ref="contentRef" class="carousel-content" :style="{ transform: `translateX(${offset}px)` }">
-                <div v-for="(item, index) in items" :key="index" class="carousel-item">
+                <div @click="handleImageClick(item)" v-for="(item, index) in items" :key="index" class="carousel-item">
                     <div class="item-card">
                         <img :src="item.url" :alt="item.name">
                         <div class="item-info">{{ item.name }}</div>
@@ -18,14 +18,15 @@
         <button v-if="maxOffset < 0 && offset > maxOffset" class="nav-btn right-btn" @click="move('next')">
             <span class="arrow"></span>
         </button>
+        <ImgView v-if="activeImg" :item="activeImg" @close="activeImg = null"></ImgView>
     </div>
 </template>
 
 <script setup lang="ts">
 interface Item { name: string, url: string }
 
-import { computed, ref } from 'vue';
-
+import { computed, onMounted, ref, onUnmounted } from 'vue';
+import ImgView from './components/imgView.vue';
 const containerRef = ref<HTMLDivElement>()
 const contentRef = ref<HTMLDivElement>()
 withDefaults(defineProps<{
@@ -43,12 +44,13 @@ withDefaults(defineProps<{
 
 
 const itemWidth = 220
-
+const resizeObserver = ref<ResizeObserver | null>(null)
+const containerWidth = ref(0)
 const offset = ref(0)
-
+const activeImg = ref<Item | null>(null)
 const maxOffset = computed(() => {
     if (!contentRef.value || !containerRef.value) return 0
-    return containerRef.value!.offsetWidth - contentRef.value!.offsetWidth
+    return containerWidth.value - contentRef.value!.offsetWidth
 })
 
 const move = (direction: 'prev' | 'next') => {
@@ -58,6 +60,27 @@ const move = (direction: 'prev' | 'next') => {
         offset.value = Math.max(offset.value - itemWidth, maxOffset.value)
     }
 }
+
+const handleImageClick = (item: Item) => {
+    activeImg.value = item
+}
+
+onMounted(() => {
+    containerWidth.value = containerRef.value!.offsetWidth
+    resizeObserver.value = new ResizeObserver(() => {
+        containerWidth.value = containerRef.value!.offsetWidth
+        // 2. 核心修复：修正偏移量，防止缩放后右侧露白
+        // 如果当前偏移量比最大允许偏移量还小，就把它弹回最大偏移量
+        if (offset.value < maxOffset.value) {
+            offset.value = maxOffset.value
+        }
+    })
+    resizeObserver.value.observe(containerRef.value!)
+})
+
+onUnmounted(() => {
+    resizeObserver.value?.disconnect()
+})
 </script>
 
 <style scoped>
