@@ -14,4 +14,4 @@ import dropSort from './components/dropSort.vue'
 import './styles/index.less'
 import 'normalize.css'
 import InitIcon from './icon'
-createApp(dropSort).use(ElementPlus).use(InitIcon).mount('#app')
+createApp(App9).use(ElementPlus).use(InitIcon).mount('#app')
