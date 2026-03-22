@@ -9,9 +9,10 @@ import App5 from './App5.vue'
 import App6 from './App6.vue'
 import App7 from './app-config.vue'
 import App9 from './App9.vue'
+import App10 from './App10.vue'
 import deepTable from './deepTable.vue'
 import dropSort from './components/dropSort.vue'
 import './styles/index.less'
 import 'normalize.css'
 import InitIcon from './icon'
-createApp(App9).use(ElementPlus).use(InitIcon).mount('#app')
+createApp(App10).use(ElementPlus).use(InitIcon).mount('#app')
